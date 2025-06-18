@@ -1,8 +1,7 @@
-<!DOCTYPE html>
-<html lang="ko">
+<!DOCTYPE html><html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>검강화</title>
+  <title>검 강화 게임 (최고기록 포함)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -50,192 +49,15 @@
       margin: 6px 0;
       font-size: 16px;
     }
+    #endGameButtons {
+      display: none;
+      margin-top: 10px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
-  <h1>⚔️ 검강화</h1>
+  <h1>⚔️ 검 강화 게임</h1>
   <p>현재 강화 단계: <span id="level">+0</span></p>
   <p>최고 기록: <span id="maxRecord">+0</span></p>
   <p>보유 골드: <span id="gold">1200</span> G</p>
-  <p>파괴 방지권: <span id="protector">0</span>개</p>
-  <p>복구권: <span id="restorer">0</span>개</p>
-  <button class="btn" onclick="upgrade()">강화 시도</button>
-  <button class="btn" onclick="sell()">판매</button>
-
-  <div id="shop">
-    <h3>🏪 상점</h3>
-    <button class="btn" onclick="buyProtector()">파괴 방지권 구매 (500G)</button>
-    <button class="btn" onclick="buyRestorer()">복구권 구매 (1000G)</button>
-  </div>
-
-  <div id="log"></div>
-
-  <script>
-    let level = 0;
-    let maxRecord = 0;
-    let gold = 1200;
-    let protector = 0;
-    let restorer = 0;
-    let lastLevelBeforeDestroy = 0;
-
-    const fixedUpgradeCost = 50;
-    const maxLevel = 15;
-
-    function log(msg) {
-      const logBox = document.getElementById("log");
-      logBox.innerHTML += `> ${msg}<br>`;
-      logBox.scrollTop = logBox.scrollHeight;
-    }
-
-    function updateUI() {
-      document.getElementById("level").textContent = `+${level}`;
-      document.getElementById("maxRecord").textContent = `+${maxRecord}`;
-      document.getElementById("gold").textContent = gold;
-      document.getElementById("protector").textContent = protector;
-      document.getElementById("restorer").textContent = restorer;
-    }
-
-    function getSuccessRate(currentLevel) {
-      let rate = 1 - (currentLevel * 0.06);
-      if (rate < 0.03) rate = 0.03;
-      return rate;
-    }
-
-    function upgrade() {
-      if (level >= maxLevel) {
-        log("🚫 최대 강화 단계입니다. 더 이상 강화할 수 없습니다.");
-        return;
-      }
-
-      if (gold < fixedUpgradeCost) {
-        log("💰 골드가 부족합니다!");
-        return;
-      }
-
-      gold -= fixedUpgradeCost;
-      const chance = getSuccessRate(level);
-      const roll = Math.random();
-      log(`⚔️ 강화 시도 (비용: ${fixedUpgradeCost}G, 확률: ${(chance * 100).toFixed(1)}%)`);
-
-      if (roll < chance) {
-        level++;
-        log(`✨ 강화 성공! 현재 단계: +${level}`);
-
-        // 최고 기록 갱신
-        if (level > maxRecord) {
-          maxRecord = level;
-          log(`🏆 최고 기록 갱신! +${maxRecord} 단계 달성!`);
-          alert(`🏆 축하합니다! 최고 기록 +${maxRecord}단계 달성!`);
-        }
-      } else {
-        lastLevelBeforeDestroy = level;
-        if (level >= 7 && protector > 0) {
-          const useProtector = confirm("❗강화 실패 시 장비가 파괴됩니다. 파괴 방지권을 사용하시겠습니까?");
-          if (useProtector) {
-            protector--;
-            log("🛡️ 파괴 방지권을 사용하여 장비를 보호했습니다.");
-          } else {
-            handleDestroy();
-          }
-        } else {
-          handleDestroy();
-        }
-      }
-      updateUI();
-      checkGameOver();
-    }
-
-    function handleDestroy() {
-      if (restorer > 0 && lastLevelBeforeDestroy > 0) {
-        const useRestorer = confirm(`${lastLevelBeforeDestroy}단계까지 도달하셨습니다! 기록을 다시 복구할까요?`);
-        if (useRestorer) {
-          restorer--;
-          level = lastLevelBeforeDestroy;
-          log(`♻️ 복구권을 사용하여 +${level}단계부터 다시 시작합니다.`);
-          lastLevelBeforeDestroy = 0;
-          updateUI();
-          return;
-        }
-      }
-      log("💥 강화 실패! 장비가 파괴되어 +0으로 초기화됩니다.");
-      alert("💥 강화 실패! 장비가 파괴되었습니다.");
-      level = 0;
-      lastLevelBeforeDestroy = 0;
-    }
-
-    function sell() {
-      if (level === 0) {
-        log("❌ +0 장비는 판매할 수 없습니다.");
-        return;
-      }
-      const sellValue = level * 150;
-      gold += sellValue;
-      log(`💸 장비를 판매하여 ${sellValue}G를 획득했습니다. (+${level} → +0)`);
-      level = 0;
-      updateUI();
-      checkGameOver();
-    }
-
-    function buyProtector() {
-      if (protector >= 2) {
-        log("⚠️ 파괴 방지권은 최대 2개까지만 보유할 수 있습니다.");
-        return;
-      }
-      if (gold < 500) {
-        log("💰 골드가 부족합니다.");
-        return;
-      }
-      gold -= 500;
-      protector++;
-      log("✅ 파괴 방지권을 구매했습니다.");
-      updateUI();
-    }
-
-    function buyRestorer() {
-      if (level === 0) {
-        alert("❌ +0단계 장비는 복구권을 구매할 수 없습니다.");
-        return;
-      }
-      if (restorer >= 1) {
-        log("⚠️ 복구권은 1개만 보유할 수 있습니다.");
-        return;
-      }
-      if (gold < 1000) {
-        log("💰 골드가 부족합니다.");
-        return;
-      }
-      gold -= 1000;
-      restorer++;
-      log("✅ 복구권을 구매했습니다.");
-      updateUI();
-    }
-
-    function checkGameOver() {
-      if (gold < fixedUpgradeCost && level === 0) {
-        const restart = confirm("💀 골드가 부족하고 판매할 장비도 없습니다! 게임 오버! 다시 시작하시겠습니까?");
-        if (restart) {
-          resetGame();
-        } else {
-          log("게임이 종료되었습니다.");
-          document.querySelectorAll("button").forEach(btn => btn.disabled = true);
-        }
-      }
-    }
-
-    function resetGame() {
-      level = 0;
-      maxRecord = 0;
-      gold = 1200;
-      protector = 0;
-      restorer = 0;
-      lastLevelBeforeDestroy = 0;
-      log("게임을 새로 시작합니다!");
-      updateUI();
-      document.getElementById("log").innerHTML = "";
-      document.querySelectorAll("button").forEach(btn => btn.disabled = false);
-    }
-
-    updateUI();
-  </script>
-</body>
-</html>
